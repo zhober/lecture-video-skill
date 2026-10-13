@@ -1,0 +1,190 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>p12</title>
+<link rel="stylesheet" href="../assets/theme.css"><script src="../assets/cartoon.js"></script><script src="../assets/bio.js"></script>
+<style>
+.card svg { position: absolute; left: 0; top: 0; }
+.frag { left: 64px; top: 232px; width: 816px; height: 400px; }
+.sam  { left: 902px; top: 232px; width: 958px; height: 400px; }
+.hist { left: 64px; top: 222px; width: 996px; height: 456px; }
+.bad  { left: 64px; top: 696px; width: 996px; height: 222px; }
+.ex   { left: 1090px; top: 354px; width: 636px; height: 404px; }
+.ex img { position: absolute; left: 14px; top: 10px; width: 604px; }
+</style></head><body>
+<div id="hdr"></div>
+<div class="ptitle">片段长度分布与核小体周期<div id="sq"></div></div>
+
+<!-- scene 1 (step 1): what a fragment length is -->
+<div class="card frag" data-s="1" data-until="1"><svg width="816" height="400" viewBox="0 0 816 400" id="fr"></svg></div>
+<div class="card sam" data-s="1" data-until="1"><svg width="958" height="400" viewBox="0 0 958 400" id="sm"></svg></div>
+
+<!-- scene 2 (steps 2-4) -->
+<div class="card hist" data-s="2"><svg width="996" height="456" viewBox="0 0 996 456" id="hs"></svg></div>
+<div class="card bad" data-s="4" data-focus="4"><svg width="996" height="218" viewBox="0 0 996 218" id="bd"></svg></div>
+<div class="code" style="left:1090px;top:222px;width:636px;font-size:21px;padding:16px 24px" data-s="4"><span class="k">library</span>(ATACseqQC)
+<span data-hl="4">fragSizeDist</span>(<span class="s">"Control1.clean.bam"</span>, <span class="s">"Control1"</span>)</div>
+<div class="card ex" data-s="4"><img src="../assets/figs/fragment_size_simulated.png"></div>
+
+<script>
+document.getElementById('hdr').innerHTML = header('第6章 上游③ 质量控制', 2);
+document.getElementById('sq').innerHTML = squiggle(400);
+const tri = (x, y, col) => `<path d="M${x - 11} ${y - 20} L${x + 11} ${y - 20} L${x} ${y} Z" fill="${col || B.adA}" stroke="${B.ink}" stroke-width="1.5" stroke-linejoin="round"/>`;
+
+// ---------------- scene 1: fragment + SAM ----------------
+(function () {
+  const a = 200, b = 616, Y = 132;
+  let s = txt(28, 48, '片段 = 两个 Tn5 插入点之间的 DNA', 26, B.ink, 800);
+  s += helix(40, 776, Y, 9, 36);
+  s += tri(a, Y - 16) + tri(b, Y - 16);
+  s += txt(a, Y - 44, 'Tn5 插入点', 22, B.adA, 800, 'middle') + txt(b, Y - 44, 'Tn5 插入点', 22, B.adA, 800, 'middle');
+  [a, b].forEach(x => s += `<line x1="${x}" y1="${Y + 16}" x2="${x}" y2="${Y + 196}" stroke="${B.grey}" stroke-width="2" stroke-dasharray="5 5"/>`);
+  s += seqFragment(a, Y + 72, b - a);
+  s += readArrow(a, Y + 108, 150, 1, B.adA) + readArrow(b, Y + 108, 150, -1, B.adB);
+  s += txt(a + 160, Y + 116, 'R1', 24, B.adA, 800) + txt(b - 160, Y + 116, 'R2', 24, B.adB, 800, 'end');
+  // double-headed ruler
+  const yr = Y + 176;
+  s += `<line x1="${a}" y1="${yr - 14}" x2="${a}" y2="${yr + 14}" stroke="${B.ink}" stroke-width="3"/>` +
+       `<line x1="${b}" y1="${yr - 14}" x2="${b}" y2="${yr + 14}" stroke="${B.ink}" stroke-width="3"/>` +
+       `<line x1="${a + 4}" y1="${yr}" x2="${b - 4}" y2="${yr}" stroke="${B.ink}" stroke-width="3"/>` +
+       `<path d="M${a + 4} ${yr} l14 -8 v16 z M${b - 4} ${yr} l-14 -8 v16 z" fill="${B.ink}"/>`;
+  s += txt((a + b) / 2, yr + 52, '片段长度 = TLEN', 30, B.ink, 800, 'middle');
+  document.getElementById('fr').innerHTML = s;
+
+  // SAM table
+  const names = ['QNAME', 'FLAG', 'RNAME', 'POS', 'MAPQ', 'CIGAR', 'RNEXT', 'PNEXT', 'TLEN', 'SEQ', 'QUAL'];
+  const w = [80, 60, 74, 82, 64, 72, 72, 82, 90, 76, 76];
+  const r1 = ['r001', '99', 'chr1', '10468', '42', '50M', '=', '10640', '222', 'ACG…', 'FFF…'];
+  const r2 = ['r001', '147', 'chr1', '10640', '42', '50M', '=', '10468', '−222', 'TTA…', 'FFF…'];
+  const x0 = 76, ys = [120, 158, 210, 258];
+  let t = txt(28, 48, 'SAM 记录（一行 = 一条 read）', 26, B.ink, 800);
+  let xs = [], x = x0;
+  w.forEach(v => { xs.push(x); x += v; });
+  const x9 = xs[8], w9 = w[8];
+  t += `<rect x="${x9}" y="${ys[0] - 26}" width="${w9}" height="${ys[3] - ys[0] + 42}" rx="8" fill="#FDF1C7" stroke="#F2BE36" stroke-width="3"/>`;
+  t += `<rect x="${x9 + w9 / 2 - 82}" y="52" width="164" height="36" rx="18" fill="#F2BE36"/>` + txt(x9 + w9 / 2, 78, '第9列 TLEN', 22, B.ink, 800, 'middle');
+  const mono = (x, y, s, sz, col, wt) => `<text x="${x}" y="${y}" text-anchor="middle" font-family="Menlo, monospace" font-size="${sz}" font-weight="${wt || 700}" fill="${col || B.ink}">${s}</text>`;
+  names.forEach((n, i) => {
+    t += txt(xs[i] + w[i] / 2, ys[0], String(i + 1), 20, i === 8 ? '#B98800' : B.grey, 800, 'middle');
+    t += mono(xs[i] + w[i] / 2, ys[1], n, 20, i === 8 ? '#8A6400' : B.ink);
+    t += mono(xs[i] + w[i] / 2, ys[2], r1[i], 22, i === 8 ? '#8A6400' : B.ink, i === 8 ? 800 : 600);
+    t += mono(xs[i] + w[i] / 2, ys[3], r2[i], 22, i === 8 ? '#8A6400' : B.ink, i === 8 ? 800 : 600);
+  });
+  t += txt(x0 - 14, ys[2], 'R1', 22, B.adA, 800, 'end') + txt(x0 - 14, ys[3], 'R2', 22, B.adB, 800, 'end');
+  [ys[1] + 16, ys[2] + 16].forEach(y => t += `<line x1="${x0 - 50}" y1="${y}" x2="${x}" y2="${y}" stroke="#E4DED2" stroke-width="2"/>`);
+  t += txt(28, 342, '正负号只表示方向，长度取绝对值', 26, B.ink, 800);
+  document.getElementById('sm').innerHTML = t;
+})();
+
+// ---------------- scene 2: histogram ----------------
+const PX0 = 112, PX1 = 966, AY0 = 60, AY1 = 380, W = PX1 - PX0;
+const bx = bp => PX0 + W * bp / 1000;
+const G = (x, m, s) => Math.exp(-((x - m) ** 2) / (2 * s * s));
+function goodF(bp) { return 1.0 * G(bp, 55, 25) + 0.62 * G(bp, 200, 32) + 0.34 * G(bp, 400, 38) + 0.17 * G(bp, 600, 44) + 0.3 * Math.exp(-bp / 180) + 0.012; }
+let FMAX = 0; for (let v = 10; v <= 1000; v += 2) FMAX = Math.max(FMAX, goodF(v));
+const PK = 212;  // pixel height of tallest peak
+const gy = bp => AY1 - PK * goodF(bp) / FMAX;
+function curvePath(f, x0, y1, w, maxbp, h, fmax) {
+  let d = '';
+  for (let v = 8; v <= maxbp; v += 3) d += (v === 8 ? 'M' : 'L') + (x0 + w * v / maxbp).toFixed(1) + ' ' + (y1 - h * f(v) / fmax).toFixed(1) + ' ';
+  return d;
+}
+function miniNuc(x, y) {
+  return `<circle cx="${x}" cy="${y}" r="14" fill="#F3C98B" stroke="${B.ink}" stroke-width="1.8"/>` +
+    `<circle cx="${x - 5}" cy="${y - 5}" r="5" fill="${B.h3}" opacity=".9"/><circle cx="${x + 5}" cy="${y + 4}" r="5" fill="${B.h2b}" opacity=".9"/>` +
+    `<path d="M${x - 17} ${y + 6} Q${x} ${y + 16} ${x + 17} ${y - 6}" fill="none" stroke="${B.dna1}" stroke-width="4" stroke-linecap="round"/>`;
+}
+function miniFrag(cx, y, n) {
+  const wd = n === 0 ? 50 : n * 40 + 30, x1 = cx - wd / 2, x2 = cx + wd / 2;
+  let s = helix(x1, x2, y, 4, 16, { w: 3 });
+  for (let i = 0; i < n; i++) s += miniNuc(x1 + 35 + i * 40, y);
+  return s + tri(x1, y - 8) + tri(x2, y - 8);
+}
+function annot(cx, yN, n, name, bpl, col) {
+  return txt(cx, yN, name, 24, col, 800, 'middle') + txt(cx, yN + 26, bpl, 22, B.grey, 800, 'middle') + miniFrag(cx, yN + 66, n);
+}
+(function () {
+  let s = axes(PX0, AY0, W, AY1 - AY0, '', 'reads 数');
+  [0, 200, 400, 600, 800, 1000].forEach(v => {
+    const px = bx(v);
+    s += `<line x1="${px}" y1="${AY1}" x2="${px}" y2="${AY1 + 8}" stroke="${B.ink}" stroke-width="2"/>` + txt(px, AY1 + 32, String(v), 20, B.grey, 700, 'middle');
+  });
+  s += txt((PX0 + PX1) / 2, AY1 + 66, '片段长度 |TLEN|（bp）', 24, B.ink, 800, 'middle');
+  const d = curvePath(goodF, PX0, AY1, W, 1000, PK, FMAX);
+  s += `<path d="${d} L${PX1} ${AY1} L${bx(8)} ${AY1} Z" fill="${B.dna1}" fill-opacity=".13"/>` +
+       `<path d="${d}" fill="none" stroke="${B.dna1}" stroke-width="4.5" stroke-linejoin="round"/>`;
+  // annotations (staircase above each peak)
+  s += `<rect data-focus="2" x="${PX0 + 8}" y="${AY0 - 8}" width="${bx(730) - PX0}" height="${AY1 - AY0 + 4}" fill="none"/>`;
+  s += `<g>` +
+    annot(bx(72), 92, 0, 'NFR', '<100 bp', B.peak) +
+    annot(bx(200), gy(200) - 106, 1, '单核小体', '~200 bp', B.ink) +
+    annot(bx(400), gy(400) - 104, 2, '双核小体', '~400 bp', B.ink) +
+    annot(bx(612), gy(600) - 104, 3, '三核小体', '~600 bp', B.ink) + `</g>`;
+  // step 3: Bowtie2 default -X 500
+  const x5 = bx(500);
+  s += `<g data-s="3">` +
+    `<rect x="${x5}" y="${AY0}" width="${PX1 - x5}" height="${AY1 - AY0}" fill="#6B6F85" fill-opacity=".16"/>` +
+    `<line x1="${x5}" y1="${AY0 - 22}" x2="${x5}" y2="${AY1}" stroke="${B.red}" stroke-width="4" stroke-dasharray="10 7"/>` +
+    txt(x5 + 14, AY0 + 34, 'Bowtie2 默认上限 500 bp', 24, B.red, 800) +
+    txt(x5 + 14, AY0 + 68, '默认参数下，这些片段会丢失', 22, '#4A4D63', 800) +
+    `<rect x="${x5 + 14}" y="10" width="262" height="38" rx="19" fill="${C.green}"/>` +
+    txt(x5 + 145, 37, '✓ 比对时已设 -X 2000', 22, '#fff', 800, 'middle') +
+    `</g>`;
+  document.getElementById('hs').innerHTML = s;
+})();
+
+// ---------------- step 4: poor library + common causes ----------------
+function blebCell(cx, cy) {
+  // apoptotic cell: shrunken body with membrane blebs, fragmented condensed nucleus, detached apoptotic bodies
+  const F = '#EDC3BD', S = '#8A5358';
+  let s = '';
+  [[-44, -14, 11], [-30, -38, 10], [0, -46, 12], [32, -36, 10], [46, -6, 11], [36, 28, 10], [8, 44, 11], [-26, 38, 10], [-46, 18, 9]]
+    .forEach(([dx, dy, r]) => s += `<circle cx="${cx + dx}" cy="${cy + dy}" r="${r}" fill="${F}" stroke="${S}" stroke-width="2"/>`);
+  s += `<circle cx="${cx}" cy="${cy}" r="41" fill="${F}" stroke="${S}" stroke-width="2.4"/>`;
+  s += `<circle cx="${cx}" cy="${cy}" r="41" fill="${F}"/>`;
+  [[-12, -8, 9], [8, -12, 7], [10, 10, 8], [-8, 14, 6]].forEach(([dx, dy, r]) =>
+    s += `<circle cx="${cx + dx}" cy="${cy + dy}" r="${r}" fill="#7D5B94" stroke="#4E3763" stroke-width="1.6"/>`);
+  [[70, -40, 12], [-72, 34, 10]].forEach(([dx, dy, r]) =>
+    s += `<circle cx="${cx + dx}" cy="${cy + dy}" r="${r}" fill="${F}" stroke="${S}" stroke-width="2"/>` +
+         `<circle cx="${cx + dx + 1}" cy="${cy + dy}" r="${r * 0.38}" fill="#7D5B94"/>`);
+  return s;
+}
+function intactCell(cx, cy) {
+  // cell not lysed: nucleus still enclosed by plasma membrane, cytoplasm with mitochondria
+  const mito = '../assets/figs/Mitochondria_(NIH_BioArt_353).svg';
+  let s = `<ellipse cx="${cx}" cy="${cy}" rx="68" ry="50" fill="#FCF1D2" stroke="#8C7446" stroke-width="2.6"/>` +
+          `<ellipse cx="${cx}" cy="${cy}" rx="63" ry="45" fill="none" stroke="#D8C08A" stroke-width="1.2"/>`;
+  s += `<ellipse cx="${cx - 8}" cy="${cy + 2}" rx="27" ry="23" fill="#C9B8E2" stroke="#5E4A86" stroke-width="2.2"/>`;
+  [[-16, -6], [-2, -10], [-10, 10], [4, 6], [-20, 6]].forEach(([dx, dy]) =>
+    s += `<circle cx="${cx - 8 + dx + 8}" cy="${cy + 2 + dy}" r="3" fill="#6E58A0" opacity=".7"/>`);
+  s += `<circle cx="${cx - 6}" cy="${cy}" r="6" fill="#8F79BF"/>`;
+  [[40, -20, 20], [40, 22, -25], [-48, -12, 70], [-40, 26, 120]].forEach(([dx, dy, rot]) =>
+    s += `<image href="${mito}" x="${cx + dx - 36}" y="${cy + dy - 36}" width="72" height="72" transform="rotate(${rot} ${cx + dx} ${cy + dy})"/>`);
+  return s;
+}
+function tn5Rows(x0, y1, y2) {
+  const row = (y, ins) => {
+    let s = helix(x0, x0 + 176, y, 4, 16, { w: 3 });
+    [44, 92, 140].forEach(nx => s += `<rect x="${x0 + nx - 16}" y="${y - 8}" width="32" height="16" fill="#fff"/>` + miniNuc(x0 + nx, y));
+    ins.forEach(ix => s += tri(x0 + ix, y - 10, B.adA));
+    return s;
+  };
+  return row(y1, [6, 20, 62, 74, 110, 122, 160, 172]) + row(y2, [68]) +
+    txt(x0 - 12, y1 + 7, '过量', 20, B.ink, 800, 'end') + txt(x0 - 12, y2 + 7, '不足', 20, B.ink, 800, 'end');
+}
+(function () {
+  const ax = 40, ay = 50, aw = 206, ah = 108;
+  let s = axes(ax, ay, aw, ah, '', '');
+  const badF = v => 0.9 * Math.exp(-v / 150) + 0.02;
+  const d = curvePath(badF, ax, ay + ah, aw, 1000, ah * 0.9, badF(8));
+  s += `<path d="${d} L${ax + aw} ${ay + ah} L${ax + aw * 8 / 1000} ${ay + ah} Z" fill="${B.grey}" fill-opacity=".15"/>` +
+       `<path d="${d}" fill="none" stroke="#6B6F85" stroke-width="4" stroke-linejoin="round"/>`;
+  s += `<rect x="${ax + aw - 104}" y="${ay - 30}" width="116" height="36" rx="10" fill="${B.red}"/>` + txt(ax + aw - 46, ay - 4, '质量不佳', 22, '#fff', 800, 'middle');
+  s += txt(ax + aw / 2, ay + ah + 38, '平滑下降，无周期峰', 22, B.ink, 800, 'middle');
+  s += `<line x1="282" y1="22" x2="282" y2="200" stroke="#E4DED2" stroke-width="2"/>`;
+  s += txt(304, 40, '常见原因', 22, B.grey, 800);
+  s += blebCell(392, 104) + txt(392, 198, '细胞活力差', 24, B.ink, 800, 'middle');
+  s += intactCell(596, 104) + txt(596, 198, '细胞核提取不充分', 24, B.ink, 800, 'middle');
+  s += tn5Rows(780, 86, 142) + txt(850, 198, 'Tn5 与细胞数比例不当', 24, B.ink, 800, 'middle');
+  document.getElementById('bd').innerHTML = s;
+})();
+applyStep();
+</script>
+</body></html>

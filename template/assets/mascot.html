@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>mascot</title>
+<style>
+@font-face { font-family: "KuaiLe"; src: url("fonts/ZCOOLKuaiLe-Regular.ttf"); }
+html,body{margin:0;padding:0;background:transparent;width:480px;height:480px;overflow:hidden}
+svg{display:block}
+</style></head>
+<body>
+<div id="m"></div>
+<script>
+// Cartoon Claude-spark assistant. Pure visual mascot (does not speak).
+const INK = '#2B2D42', OR = '#D97757', ORD = '#C4623F';
+const q = new URLSearchParams(location.search);
+const pose = q.get('pose') || 'idle';
+const blink = q.get('blink') === '1';
+const signText = q.get('sign') || '注意！';
+const flip = q.get('flip') === '1';
+const CX = 280, CY = 270;
+
+function rays() {
+  const n = 10, lens = [1, .9, .97, .88, 1, .92, .96, .89, .99, .9];
+  let under = '', over = '';
+  for (let i = 0; i < n; i++) {
+    const a = (-90 + i * 360 / n) * Math.PI / 180;
+    const R = 150 * lens[i], r0 = 44, w0 = 22, w1 = 13;
+    const ux = Math.cos(a), uy = Math.sin(a), px = -uy, py = ux;
+    const bx = CX + ux * r0, by = CY + uy * r0, tx = CX + ux * R, ty = CY + uy * R;
+    const d = `M${bx + px * w0} ${by + py * w0} L${tx + px * w1} ${ty + py * w1} ` +
+      `A${w1} ${w1} 0 0 0 ${tx - px * w1} ${ty - py * w1} L${bx - px * w0} ${by - py * w0} Z`;
+    under += `<path d="${d}" fill="${INK}" stroke="${INK}" stroke-width="12" stroke-linejoin="round"/>`;
+    over += `<path d="${d}" fill="${OR}"/>`;
+  }
+  under += `<circle cx="${CX}" cy="${CY}" r="86" fill="${INK}" stroke="${INK}" stroke-width="12"/>`;
+  over += `<circle cx="${CX}" cy="${CY}" r="86" fill="${OR}"/>`;
+  over += `<path d="M${CX - 60} ${CY - 34} Q${CX - 46} ${CY - 66} ${CX - 12} ${CY - 74}" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="9" stroke-linecap="round"/>`;
+  return under + over;
+}
+
+function face(expr) {
+  const ex = 30, ey = CY - 8;
+  let eyes;
+  if (blink) {
+    eyes = `<path d="M${CX - ex - 11} ${ey + 2} Q${CX - ex} ${ey + 10} ${CX - ex + 11} ${ey + 2}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>` +
+           `<path d="M${CX + ex - 11} ${ey + 2} Q${CX + ex} ${ey + 10} ${CX + ex + 11} ${ey + 2}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`;
+  } else if (expr === 'happy') {
+    eyes = `<path d="M${CX - ex - 12} ${ey + 4} Q${CX - ex} ${ey - 12} ${CX - ex + 12} ${ey + 4}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>` +
+           `<path d="M${CX + ex - 12} ${ey + 4} Q${CX + ex} ${ey - 12} ${CX + ex + 12} ${ey + 4}" fill="none" stroke="${INK}" stroke-width="7" stroke-linecap="round"/>`;
+  } else {
+    const look = expr === 'lookleft' ? -4 : (expr === 'lookup' ? 0 : 0);
+    const lookY = expr === 'lookup' ? -4 : 0;
+    eyes = `<ellipse cx="${CX - ex + look}" cy="${ey + lookY}" rx="12" ry="16" fill="${INK}"/>` +
+           `<ellipse cx="${CX + ex + look}" cy="${ey + lookY}" rx="12" ry="16" fill="${INK}"/>` +
+           `<circle cx="${CX - ex + look - 4}" cy="${ey + lookY - 6}" r="4.5" fill="#fff"/>` +
+           `<circle cx="${CX + ex + look - 4}" cy="${ey + lookY - 6}" r="4.5" fill="#fff"/>`;
+  }
+  const cheeks = `<ellipse cx="${CX - 56}" cy="${CY + 22}" rx="14" ry="8" fill="#F7A8A0" opacity=".75"/>` +
+                 `<ellipse cx="${CX + 56}" cy="${CY + 22}" rx="14" ry="8" fill="#F7A8A0" opacity=".75"/>`;
+  let mouth;
+  if (expr === 'o') {
+    mouth = `<ellipse cx="${CX}" cy="${CY + 32}" rx="9" ry="11" fill="${INK}"/>`;
+  } else if (expr === 'think') {
+    mouth = `<path d="M${CX - 12} ${CY + 32} Q${CX + 2} ${CY + 26} ${CX + 14} ${CY + 33}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`;
+  } else if (expr === 'happy' || expr === 'grin') {
+    mouth = `<path d="M${CX - 20} ${CY + 22} Q${CX} ${CY + 50} ${CX + 20} ${CY + 22} Z" fill="${INK}" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>` +
+            `<path d="M${CX - 9} ${CY + 38} Q${CX} ${CY + 32} ${CX + 9} ${CY + 38} Q${CX} ${CY + 44} ${CX - 9} ${CY + 38}" fill="#F28B82"/>`;
+  } else {
+    mouth = `<path d="M${CX - 17} ${CY + 25} Q${CX} ${CY + 42} ${CX + 17} ${CY + 25}" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`;
+  }
+  return eyes + cheeks + mouth;
+}
+
+function arm(d) {
+  return `<path d="${d}" fill="none" stroke="${INK}" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>` +
+         `<path d="${d}" fill="none" stroke="${OR}" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+function hand(x, y, r) {
+  r = r || 15;
+  return `<circle cx="${x}" cy="${y}" r="${r}" fill="${OR}" stroke="${INK}" stroke-width="6"/>`;
+}
+
+function poseSVG() {
+  let back = '', front = '', expr = 'smile';
+  switch (pose) {
+    case 'wave':
+      expr = 'grin';
+      front += arm(`M${CX + 70} ${CY + 40} Q${CX + 130} ${CY + 10} ${CX + 150} ${CY - 70}`) + hand(CX + 152, CY - 76, 17);
+      front += `<path d="M${CX + 180} ${CY - 110} q14 14 8 32 M${CX + 196} ${CY - 128} q22 22 12 52" fill="none" stroke="${INK}" stroke-width="6" stroke-linecap="round"/>`;
+      break;
+    case 'point':
+      expr = 'lookleft';
+      front += arm(`M${CX - 70} ${CY + 30} Q${CX - 120} ${CY + 20} ${CX - 150} ${CY - 10}`) + hand(CX - 154, CY - 12);
+      front += `<path d="M${CX - 160} ${CY - 18} L${CX - 262} ${CY - 92}" stroke="${INK}" stroke-width="16" stroke-linecap="round"/>` +
+               `<path d="M${CX - 160} ${CY - 18} L${CX - 262} ${CY - 92}" stroke="#B97A3E" stroke-width="8" stroke-linecap="round"/>` +
+               `<circle cx="${CX - 264}" cy="${CY - 94}" r="10" fill="#F2BE36" stroke="${INK}" stroke-width="5"/>`;
+      break;
+    case 'sign':
+      expr = 'o';
+      back += `<g transform="rotate(-8 ${CX - 150} ${CY - 150})">` +
+        `<rect x="${CX - 250}" y="${CY - 220}" width="210" height="112" rx="16" fill="#F2BE36" stroke="${INK}" stroke-width="7"/>` +
+        `<text x="${CX - 145}" y="${CY - 146}" text-anchor="middle" font-family="KuaiLe, PingFang SC" font-size="${signText.length > 4 ? 40 : 52}" fill="${INK}" ${flip ? `transform="translate(${2 * (CX - 145)} 0) scale(-1 1)"` : ''}>${signText}</text>` +
+        `</g>` +
+        `<path d="M${CX - 120} ${CY - 118} L${CX - 96} ${CY - 20}" stroke="${INK}" stroke-width="16" stroke-linecap="round"/>` +
+        `<path d="M${CX - 120} ${CY - 118} L${CX - 96} ${CY - 20}" stroke="#B97A3E" stroke-width="8" stroke-linecap="round"/>`;
+      front += arm(`M${CX - 60} ${CY + 40} Q${CX - 100} ${CY + 20} ${CX - 104} ${CY - 30}`) + hand(CX - 104, CY - 34);
+      break;
+    case 'magnifier':
+      expr = 'lookleft';
+      front += arm(`M${CX - 66} ${CY + 40} Q${CX - 110} ${CY + 40} ${CX - 128} ${CY + 4}`) + hand(CX - 130, CY);
+      front += `<path d="M${CX - 136} ${CY - 6} L${CX - 168} ${CY - 44}" stroke="${INK}" stroke-width="20" stroke-linecap="round"/>` +
+               `<path d="M${CX - 136} ${CY - 6} L${CX - 168} ${CY - 44}" stroke="#8B67C9" stroke-width="11" stroke-linecap="round"/>` +
+               `<circle cx="${CX - 204}" cy="${CY - 86}" r="54" fill="#DBEEF9" fill-opacity=".75" stroke="${INK}" stroke-width="10"/>` +
+               `<path d="M${CX - 234} ${CY - 100} Q${CX - 226} ${CY - 124} ${CX - 200} ${CY - 128}" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>`;
+      break;
+    case 'thumbs':
+      expr = 'happy';
+      front += arm(`M${CX + 70} ${CY + 40} Q${CX + 120} ${CY + 30} ${CX + 140} ${CY - 20}`);
+      front += `<rect x="${CX + 118}" y="${CY - 40}" width="44" height="40" rx="13" fill="${OR}" stroke="${INK}" stroke-width="6"/>` +
+               `<rect x="${CX + 128}" y="${CY - 88}" width="20" height="54" rx="10" fill="${OR}" stroke="${INK}" stroke-width="6"/>`;
+      front += star(CX + 200, CY - 120, 16) + star(CX + 80, CY - 170, 11) + star(CX + 215, CY - 40, 10);
+      break;
+    case 'think':
+      expr = 'think';
+      front += arm(`M${CX + 40} ${CY + 70} Q${CX + 70} ${CY + 110} ${CX + 36} ${CY + 60}`) + hand(CX + 34, CY + 56, 14);
+      back += `<circle cx="${CX - 120}" cy="${CY - 120}" r="12" fill="#fff" stroke="${INK}" stroke-width="5"/>` +
+              `<circle cx="${CX - 150}" cy="${CY - 160}" r="18" fill="#fff" stroke="${INK}" stroke-width="5"/>` +
+              `<ellipse cx="${CX - 190}" cy="${CY - 222}" rx="62" ry="46" fill="#fff" stroke="${INK}" stroke-width="6"/>` +
+              `<text x="${CX - 190}" y="${CY - 202}" text-anchor="middle" font-family="KuaiLe, PingFang SC" font-size="60" fill="#D97757">?</text>`;
+      break;
+    case 'cheer':
+      expr = 'happy';
+      front += arm(`M${CX - 70} ${CY + 20} Q${CX - 130} ${CY - 20} ${CX - 140} ${CY - 90}`) + hand(CX - 142, CY - 96, 17);
+      front += arm(`M${CX + 70} ${CY + 20} Q${CX + 130} ${CY - 20} ${CX + 140} ${CY - 90}`) + hand(CX + 142, CY - 96, 17);
+      const conf = [[-200, -150, '#3D7DCA'], [-90, -200, '#F2BE36'], [60, -210, '#4FA35A'], [190, -160, '#8B67C9'], [-230, -60, '#E0574F'], [215, -60, '#2A9D8F']];
+      conf.forEach(([dx, dy, c], i) => front += `<rect x="${CX + dx}" y="${CY + dy}" width="18" height="10" rx="3" fill="${c}" stroke="${INK}" stroke-width="3" transform="rotate(${i * 37} ${CX + dx} ${CY + dy})"/>`);
+      break;
+    default: // idle
+      front += arm(`M${CX - 70} ${CY + 50} Q${CX - 104} ${CY + 84} ${CX - 108} ${CY + 112}`) + hand(CX - 108, CY + 116, 14);
+      front += arm(`M${CX + 70} ${CY + 50} Q${CX + 104} ${CY + 84} ${CX + 108} ${CY + 112}`) + hand(CX + 108, CY + 116, 14);
+  }
+  return back + rays() + face(expr) + front;
+}
+function star(x, y, r) {
+  let d = '';
+  for (let i = 0; i < 10; i++) {
+    const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+    d += (i ? 'L' : 'M') + (x + rr * Math.cos(a)) + ' ' + (y + rr * Math.sin(a)) + ' ';
+  }
+  return `<path d="${d}Z" fill="#F2BE36" stroke="${INK}" stroke-width="4" stroke-linejoin="round"/>`;
+}
+
+// soft ground shadow
+const shadow = `<ellipse cx="${CX}" cy="${CY + 172}" rx="120" ry="16" fill="${INK}" opacity=".13"/>`;
+document.getElementById('m').innerHTML =
+  `<svg width="480" height="480" viewBox="0 0 480 480"><g ${flip ? 'transform="translate(480 0) scale(-1 1)"' : ''}>${shadow}${poseSVG()}</g></svg>`;
+document.body.dataset.ready = '1';
+</script>
+</body></html>

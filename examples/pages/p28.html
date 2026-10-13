@@ -1,0 +1,71 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>p28</title>
+<link rel="stylesheet" href="../assets/theme.css"><script src="../assets/cartoon.js"></script><script src="../assets/bio.js"></script>
+<style>
+.ptitle .en { font-size: 30px; color: var(--ink-2); font-weight: 700; margin-left: 16px; letter-spacing: 0; }
+.row { position: absolute; left: 64px; width: 1540px; height: 124px; display: flex; align-items: center; gap: 26px; padding: 0 28px 0 18px; }
+.row .no { flex: none; width: 58px; height: 58px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 30px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; }
+.row svg { flex: none; }
+.row .tx { display: flex; flex-direction: column; gap: 6px; }
+.row .h { font-size: 34px; font-weight: 800; line-height: 1.2; }
+.row .d { font-size: 25px; font-weight: 600; color: var(--ink-2); line-height: 1.35; }
+.row .h em { font-style: normal; color: var(--orange); }
+.row.warn { background: #FFF8E6; border-color: #F0D9A8; }
+</style></head><body>
+<div id="hdr"></div>
+<div class="ptitle">Take-home messages<div id="sq"></div></div>
+
+<div class="card row" style="top:214px" data-s="1"><div class="no">1</div>
+  <svg width="170" height="100" viewBox="0 0 170 100" id="i1"></svg>
+  <div class="tx"><div class="h">ATAC-seq 测的是<em>染色质可及性</em></div>
+  <div class="d">Tn5 只能插入开放 DNA，reads 富集的区域即为 peak</div></div></div>
+
+<div class="card row" style="top:352px" data-s="2"><div class="no">2</div>
+  <svg width="170" height="100" viewBox="0 0 170 100" id="i2"></svg>
+  <div class="tx"><div class="h">上游：比对 → 过滤 → 位置校正 → peak calling</div>
+  <div class="d">质控重点：片段长度周期、TSS 富集、FRiP，并在样本间横向比较</div></div></div>
+
+<div class="card row" style="top:490px" data-s="3"><div class="no">3</div>
+  <svg width="170" height="100" viewBox="0 0 170 100" id="i3"></svg>
+  <div class="tx"><div class="h">下游：count 矩阵 → 差异分析 → peak 注释 → motif 富集 → footprint</div>
+  <div class="d">常用工具：DiffBind、ChIPseeker、HOMER、HINT-ATAC</div></div></div>
+
+<div class="card row warn" style="top:628px" data-s="4"><div class="no">4</div>
+  <svg width="170" height="100" viewBox="0 0 170 100" id="i4"></svg>
+  <div class="tx"><div class="h">解读要<em>谨慎</em></div>
+  <div class="d">差异结果严重偏向一个方向时，先检查标准化与文库质量；最近的基因 ≠ 靶基因；motif 仅为候选</div></div></div>
+
+<div class="card row" style="top:766px" data-s="5"><div class="no">5</div>
+  <svg width="170" height="100" viewBox="0 0 170 100" id="i5"></svg>
+  <div class="tx"><div class="h">参考文件版本统一，<em>理解每个参数</em></div>
+  <div class="d">再修改为适合自己数据的代码</div></div></div>
+
+<script>
+document.getElementById('hdr').innerHTML = header('第10章 延伸与总结', -1);
+document.getElementById('sq').innerHTML = squiggle(400);
+// 1: Tn5 on open DNA + a small peak
+document.getElementById('i1').innerHTML =
+  chromatin(4, 166, 74, [22, 148], 16) + tn5Dimer(85, 50, 0.45) +
+  coverage(40, 130, 26, [[85, 22, 10]], B.peak, B.peakL, 0.6).replace(/stroke-width="2"/, 'stroke-width="0"');
+// 2: fragment-length ladder
+document.getElementById('i2').innerHTML =
+  `<line x1="10" y1="88" x2="160" y2="88" stroke="${B.ink}" stroke-width="2"/>` + fragLenCurve(10, 12, 150, 76, true, B.dna1, 800);
+// 3: count matrix -> volcano
+let m = '';
+for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+  const v = [0.2, 0.5, 0.8, 0.35, 0.9, 0.3, 0.6, 0.15, 0.4, 0.75, 0.25, 0.55, 0.65, 0.1, 0.45, 0.85][r * 4 + c];
+  m += `<rect x="${6 + c * 16}" y="${18 + r * 16}" width="15" height="15" fill="${c < 2 ? B.adB : B.peak}" fill-opacity="${0.2 + 0.7 * v}"/>`;
+}
+document.getElementById('i3').innerHTML = m + arrow(76, 50, 96, 50, B.ink, 4) +
+  volcano(102, 14, 62, 70).replace(/<text[^>]*>[^<]*<\/text>/g, '').replace(/r="4.5"/g, 'r="1.8"');
+// 4: warning triangle
+document.getElementById('i4').innerHTML =
+  `<path d="M85 10 L140 90 L30 90 Z" fill="${B.h2a}" stroke="${B.ink}" stroke-width="4" stroke-linejoin="round"/>` +
+  txt(85, 80, '!', 52, B.ink, 900, 'middle');
+// 5: hg19 badge + code brackets
+document.getElementById('i5').innerHTML =
+  `<rect x="14" y="30" width="80" height="40" rx="20" fill="${B.green}"/>` + txt(54, 58, 'hg19', 22, '#fff', 800, 'middle') +
+  `<rect x="104" y="22" width="58" height="56" rx="10" fill="${B.ink}"/>` + txt(133, 58, '&lt;/&gt;', 22, '#F2BE36', 800, 'middle');
+applyStep();
+</script>
+</body></html>

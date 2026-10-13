@@ -1,0 +1,66 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>p03</title>
+<link rel="stylesheet" href="../assets/theme.css"><script src="../assets/cartoon.js"></script><script src="../assets/bio.js"></script>
+<style>
+#scene { position: absolute; left: 40px; top: 196px; }
+.tracks { left: 64px; top: 712px; width: 1560px; height: 212px; }
+.tracks svg { position: absolute; left: 0; top: 0; }
+</style></head><body>
+<div id="hdr"></div>
+<div class="ptitle">染色质、核小体与开放区域<div id="sq"></div></div>
+<svg id="scene" width="1840" height="520" viewBox="0 0 1840 520"></svg>
+<div class="card tracks" data-s="4"><svg width="1560" height="212" viewBox="0 0 1560 212" id="trk"></svg></div>
+<script>
+document.getElementById('hdr').innerHTML = header('第2章 ATAC-seq 是什么', null);
+document.getElementById('sq').innerHTML = squiggle(400);
+const Y = 300;
+const nucs = [100, 204, 308, 412, 516, 850, 954, 1290, 1394, 1498];
+let base = chromatin(20, 1620, Y, nucs, 32);
+
+// step 1: magnified nucleosome (gives way to the region bands at step 3) + linker DNA label
+const CX = 300, CY = 118;
+let zoom = `<g data-s="1" data-until="2">` +
+  `<path d="M${308 - 40} ${Y - 40} L${CX - 96} 214 M${308 + 40} ${Y - 40} L${CX + 96} 214" stroke="${B.grey}" stroke-width="2" stroke-dasharray="6 6" fill="none"/>` +
+  `<circle cx="308" cy="${Y}" r="50" fill="none" stroke="${B.grey}" stroke-width="2" stroke-dasharray="6 6"/>` +
+  `<rect x="190" y="18" width="620" height="196" rx="20" fill="#fff" stroke="#D8D1C3" stroke-width="2"/>` +
+  `<g transform="translate(${CX},${CY}) scale(1.8)">${nucleosome(0, 0, 32)}</g>` +
+  txt(410, 74, '核小体', 30, B.ink, 800) +
+  txt(410, 116, '组蛋白八聚体', 24, B.ink, 700);
+[['H2A', B.h2a], ['H2B', B.h2b], ['H3', B.h3], ['H4', B.h4]].forEach(([n, c], i) => {
+  const x = 418 + i * 84;
+  zoom += `<circle cx="${x}" cy="145" r="10" fill="${c}" stroke="${B.ink}" stroke-width="1.5"/>` + txt(x + 16, 153, n, 20, B.ink, 700);
+});
+zoom += txt(748, 153, '× 2', 20, B.grey, 700) +
+  txt(410, 194, '≈147 bp DNA 缠绕', 24, B.dna1, 800) + `</g>`;
+let s1 = zoom + `<g data-s="1">` +
+  `<line x1="256" y1="${Y + 12}" x2="256" y2="${Y + 60}" stroke="${B.ink}" stroke-width="2" stroke-dasharray="5 5"/>` +
+  txt(256, Y + 88, '连接 DNA', 24, B.dna1, 800, 'middle') + `</g>`;
+
+// step 2: repeat unit ≈200 bp
+let s2 = `<g data-s="2">` +
+  bracket(412, 516, Y + 58, false, '≈200 bp', B.peak, '核小体 + 连接 DNA') + `</g>`;
+
+// step 3: open vs closed, TFs, enhancer / promoter, gene
+let s3 = `<g data-s="3">` +
+  band(50, 130, 520, 46, B.closed, '封闭染色质：核小体紧密排列') +
+  band(600, 130, 190, 46, '#F9DDC7', '开放（可及）', B.peak) +
+  band(800, 130, 204, 46, B.closed, '封闭') +
+  band(1014, 130, 196, 46, '#F9DDC7', '开放（可及）', B.peak) +
+  band(1236, 130, 316, 46, B.closed, '封闭') +
+  tfProtein(690, Y - 8, B.tf, '', 1.2) + tfProtein(1090, Y - 8, B.green, '', 1.2) +
+  txt(690, 222, '转录因子', 22, B.tf, 800, 'middle') + txt(1090, 222, '转录因子', 22, B.green, 800, 'middle') +
+  txt(695, Y + 88, '增强子', 26, B.tf, 800, 'middle') +
+  txt(1090, Y + 88, '启动子', 26, B.green, 800, 'middle') +
+  geneModel(1210, 1620, Y + 118, [[1210, 1250], [1330, 1370], [1460, 1500], [1580, 1620]], '基因') +
+  `</g>`;
+document.getElementById('scene').innerHTML = base + s1 + s2 + s3;
+
+// step 4: accessibility tracks in two cell types (x aligned with scene: scene x - 24)
+const off = -24;
+let t = txt(24, 44, '细胞类型 A', 24, B.ink, 800) + txt(24, 146, '细胞类型 B', 24, B.ink, 800);
+t += coverage(170, 1540, 90, [[690 + off, 58, 30], [1090 + off, 70, 28]], B.peak, B.peakL, 2.5);
+t += coverage(170, 1540, 190, [[1090 + off, 64, 28], [420 + off, 50, 26]], B.adB, '#CFE0F6', 2.5);
+t += txt(1540, 30, 'ATAC-seq 信号', 22, B.grey, 800, 'end');
+document.getElementById('trk').innerHTML = t;
+applyStep();
+</script>
+</body></html>

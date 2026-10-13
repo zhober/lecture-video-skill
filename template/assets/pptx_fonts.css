@@ -1,0 +1,13 @@
+/* Export-only font aliases: lay pages out with the fonts PowerPoint actually has (Office-bundled
+   Microsoft YaHei / Consolas), so editable text boxes line up with the rendered background.
+   Linked only by export_pptx.py; the video pages keep PingFang SC / Menlo. */
+@font-face { font-family: "PingFang SC"; src: url("../cache/fonts_office/yahei.ttf"); font-weight: 100 550; }
+@font-face { font-family: "PingFang SC"; src: url("../cache/fonts_office/yahei_bold.ttf"); font-weight: 551 1000; }
+@font-face { font-family: "Hiragino Sans GB"; src: url("../cache/fonts_office/yahei.ttf"); font-weight: 100 550; }
+@font-face { font-family: "Hiragino Sans GB"; src: url("../cache/fonts_office/yahei_bold.ttf"); font-weight: 551 1000; }
+@font-face { font-family: "Menlo"; src: url("../cache/fonts_office/consolas.ttf"); font-weight: 100 550; }
+@font-face { font-family: "Menlo"; src: url("../cache/fonts_office/consolas_bold.ttf"); font-weight: 551 1000; }
+@font-face { font-family: "SF Mono"; src: url("../cache/fonts_office/consolas.ttf"); font-weight: 100 550; }
+@font-face { font-family: "SF Mono"; src: url("../cache/fonts_office/consolas_bold.ttf"); font-weight: 551 1000; }
+/* no fake bold (the bold files are real); allow slanted italic like PowerPoint draws for gene symbols */
+body, svg text { font-synthesis: style; }

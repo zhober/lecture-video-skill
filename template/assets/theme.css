@@ -1,0 +1,117 @@
+@font-face { font-family: "KuaiLe"; src: url("fonts/ZCOOLKuaiLe-Regular.ttf"); }
+
+:root {
+  --paper: #FAF8F3;
+  --dot: #ECE7DC;
+  --ink: #2B2D42;
+  --ink-2: #5C5F77;
+  --orange: #D97757;
+  --orange-l: #F8DCCF;
+  --teal: #2A9D8F;
+  --teal-l: #D3EEEA;
+  --blue: #3D7DCA;
+  --blue-l: #DBE8F8;
+  --yellow: #F2BE36;
+  --yellow-l: #FDF1C7;
+  --red: #E0574F;
+  --red-l: #FADAD7;
+  --green: #4FA35A;
+  --green-l: #DAF0D8;
+  --purple: #8B67C9;
+  --purple-l: #E8DEF7;
+  --wood: #E3AE72;
+  --wood-d: #B97A3E;
+  --grey-l: #EFE9DE;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  width: 1920px; height: 1080px; overflow: hidden; position: relative;
+  background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1.8px, transparent 2px);
+  background-size: 36px 36px;
+  font-family: "PingFang SC", "Hiragino Sans GB", sans-serif;
+  color: var(--ink);
+}
+body.transparent { background: transparent !important; }
+
+/* ---------- header: chapter chip + progress bar ---------- */
+.header {
+  position: absolute; top: 28px; left: 56px; right: 56px; height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.chip {
+  background: var(--ink); color: #fff; border-radius: 999px;
+  padding: 10px 26px; font-size: 26px; font-weight: 600; letter-spacing: 1px;
+}
+.progress { display: flex; align-items: center; gap: 8px; }
+.pstep {
+  border: 2px solid #CFC8BA; border-radius: 999px; background: #fff;
+  padding: 6px 20px; font-size: 25px; font-weight: 600; color: var(--ink-2);
+}
+.pstep.done { background: var(--grey-l); color: var(--ink-2); }
+.pstep.cur { background: var(--orange); border-color: var(--orange); color: #fff; }
+.parrow { font-size: 22px; color: var(--ink-2); font-weight: 700; }
+
+/* ---------- page title ---------- */
+.ptitle {
+  position: absolute; top: 118px; left: 64px;
+  font-family: "PingFang SC"; font-weight: 800; font-size: 56px; line-height: 1.15; letter-spacing: 1px;
+}
+.ptitle .sub { font-family: "PingFang SC"; font-size: 30px; color: var(--ink-2); margin-left: 18px; letter-spacing: 0; }
+.squiggle { display: block; margin-top: 6px; }
+
+/* ---------- generic components ---------- */
+.card {
+  position: absolute; background: #fff; border: 2px solid #D8D1C3; border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(43,45,66,.10);
+}
+.card.soft { box-shadow: 6px 6px 0 rgba(43,45,66,.85); }
+.tag {
+  display: inline-block; border: 2px solid #CFC8BA; border-radius: 999px;
+  padding: 4px 18px; font-size: 26px; font-weight: 600; background: #fff;
+}
+.label { position: absolute; font-size: 30px; font-weight: 600; }
+.big { font-size: 40px; font-weight: 700; }
+.kuaile { font-family: "KuaiLe", "PingFang SC"; letter-spacing: 1px; }
+.muted { color: var(--ink-2); }
+.center { text-align: center; }
+
+.note {
+  position: absolute; border: 2px solid rgba(43,45,66,.35); border-radius: 16px; padding: 12px 20px;
+  font-size: 26px; font-weight: 600; line-height: 1.35;
+}
+.note.red { background: var(--red-l); }
+.note.yellow { background: var(--yellow-l); }
+.note.green { background: var(--green-l); }
+.note .nt { font-size: 22px; font-weight: 800; letter-spacing: 1px; display: block; margin-bottom: 2px; }
+.note.red .nt { color: var(--red); }
+.note.yellow .nt { color: #B98800; }
+.note.green .nt { color: var(--green); }
+
+.code {
+  position: absolute; background: #2B2D42; color: #F4EFE6; border: 4px solid var(--ink);
+  border-radius: 18px; padding: 22px 28px; font-family: Menlo, "SF Mono", monospace;
+  font-size: 27px; line-height: 1.55; white-space: pre; box-shadow: 0 10px 28px rgba(43,45,66,.18);
+}
+.code .dim { opacity: .38; }
+.code .hl { background: rgba(242,190,54,.28); border-radius: 6px; box-shadow: 0 0 0 3px rgba(242,190,54,.55); }
+.code .c { color: #9AA3B8; }
+.code .k { color: #F2BE36; }
+.code .s { color: #8FD3A8; }
+
+/* ---------- step reveal ---------- */
+[data-s] { opacity: 0; }
+[data-s].on { opacity: 1; }
+.hidden-step { display: none !important; }
+
+/* reserved zones (for layout debugging): subtitles & mascot */
+body.debug::after {
+  content: ""; position: absolute; left: 150px; right: 300px; top: 948px; height: 104px;
+  outline: 3px dashed red;
+}
+body.debug::before {
+  content: ""; position: absolute; left: 1640px; top: 700px; width: 270px; height: 370px;
+  outline: 3px dashed blue;
+}

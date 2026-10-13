@@ -1,0 +1,142 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>p10</title>
+<link rel="stylesheet" href="../assets/theme.css"><script src="../assets/cartoon.js"></script><script src="../assets/bio.js"></script>
+<style>
+.code.c { left: 262px; width: 862px; font-size: 24px; line-height: 1.55; padding: 16px 26px; }
+.num { position: absolute; width: 46px; height: 46px; border-radius: 50%; background: var(--orange); color: #fff; font-size: 26px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; border: 3px solid #fff; box-shadow: 0 3px 8px rgba(43,45,66,.18); }
+.card svg { position: absolute; left: 0; top: 0; }
+.ex { left: 1146px; width: 490px; }
+.ex .hd { position: absolute; left: 22px; top: 14px; font-size: 26px; font-weight: 800; }
+.rows { position: absolute; left: 22px; top: 62px; right: 16px; }
+.rows .r { display: flex; align-items: center; gap: 14px; height: 44px; font-size: 24px; font-weight: 700; }
+.rows .r code { font-family: Menlo, monospace; font-size: 21px; background: var(--ink); color: #F2BE36; border-radius: 8px; padding: 3px 10px; white-space: nowrap; }
+.chain { position: absolute; left: 56px; top: 0; }
+.bits { position: absolute; left: 262px; top: 386px; width: 862px; height: 84px; }
+.chk { left: 262px; top: 770px; width: 504px; }
+.chk code { font-family: Menlo, monospace; font-size: 22px; background: var(--ink); color: #F4EFE6; border-radius: 8px; padding: 5px 14px; display: inline-block; margin-top: 8px; white-space: nowrap; }
+.chart { left: 786px; top: 764px; width: 430px; height: 156px; }
+</style></head><body>
+<div id="hdr"></div>
+<div class="ptitle">BAM 过滤：samtools、sambamba 与 bedtools<div id="sq"></div></div>
+
+<!-- file chain (built step by step) -->
+<svg class="chain" width="190" height="930" viewBox="0 0 190 930" id="chain"></svg>
+
+<!-- ① samtools view -->
+<div data-s="1">
+<div class="code c" style="top:222px" data-focus="1"><span class="k">samtools</span> view -h <span data-hl="1">-f 2 -F 1804 -q 30</span> Control1.sorted.bam \
+    | <span data-hl="1"><span class="k">grep</span> -v chrM</span> \
+    | <span class="k">samtools</span> sort -o Control1.filt.bam</div>
+<div class="num" style="left:244px;top:206px">1</div>
+<svg class="bits" data-focus="1" width="862" height="84" viewBox="0 0 862 84" id="bits"></svg>
+<div class="card ex" style="top:222px;height:248px" data-focus="1"><div class="hd">去除的记录</div>
+  <div class="rows">
+    <div class="r"><code>-f 2</code>非正确配对的 reads</div>
+    <div class="r"><code>-F 1804</code>未比对、次要比对等</div>
+    <div class="r"><code>-q 30</code>MAPQ &lt; 30 的比对</div>
+    <div class="r"><code>grep -v chrM</code>线粒体 reads</div>
+  </div></div>
+</div>
+
+<!-- ② sambamba markdup -->
+<div data-s="2">
+<div class="code c" style="top:490px" data-focus="2"><span class="k">sambamba</span> markdup <span data-hl="2">-r</span> Control1.filt.bam Control1.dedup.bam</div>
+<div class="num" style="left:244px;top:474px">2</div>
+<div class="card ex" style="top:490px;height:77px" data-focus="2"><svg width="490" height="77" viewBox="0 0 490 77" id="ex2"></svg></div>
+</div>
+
+<!-- ③ bedtools intersect -->
+<div data-s="3">
+<div class="code c" style="top:588px" data-focus="3"><span class="k">bedtools</span> intersect <span data-hl="3">-v</span> -abam Control1.dedup.bam \
+    -b <span data-hl="3">ref/hg19-blacklist.v2.bed</span> &gt; Control1.clean.bam
+<span class="k">samtools</span> index Control1.clean.bam</div>
+<div class="num" style="left:244px;top:572px">3</div>
+<div class="card ex" style="top:588px;height:153px" data-focus="3"><svg width="490" height="153" viewBox="0 0 490 153" id="ex3"></svg></div>
+</div>
+
+<!-- ④ checkpoint -->
+<div data-s="4">
+<div class="note green chk" data-focus="4"><span class="nt">检查点</span><code>samtools view -c Control1.clean.bam</code></div>
+<div class="card chart" data-focus="4"><svg width="430" height="156" viewBox="0 0 430 156" id="bar"></svg></div>
+</div>
+
+<script>
+document.getElementById('hdr').innerHTML = header('第5章 上游② 过滤与校正', 1);
+document.getElementById('sq').innerHTML = squiggle(400);
+const MONO = 'Menlo, monospace';
+function mtxt(x, y, t, size, color, weight, anchor) {
+  return `<text x="${x}" y="${y}" text-anchor="${anchor || 'start'}" font-size="${size}" font-weight="${weight || 700}" fill="${color || B.ink}" font-family="${MONO}">${t}</text>`;
+}
+function thinArrow(x1, y1, x2, y2, col, w) {
+  col = col || B.ink; w = w || 3;
+  const a = Math.atan2(y2 - y1, x2 - x1), L = 13;
+  return `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none"/>` +
+         `<path d="M${x2 - L * Math.cos(a - 0.45)} ${y2 - L * Math.sin(a - 0.45)} L${x2} ${y2} L${x2 - L * Math.cos(a + 0.45)} ${y2 - L * Math.sin(a + 0.45)}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" fill="none"/>`;
+}
+
+// ---------- file chain ----------
+function node(cy, t, strong) {
+  return `<rect x="6" y="${cy - 21}" width="176" height="42" rx="21" fill="${strong ? '#DAF0D8' : '#fff'}" stroke="${strong ? B.green : B.ink}" stroke-width="3"/>` +
+         mtxt(94, cy + 8, t, 21, B.ink, 800, 'middle');
+}
+function link(y1, y2, n) {
+  const ym = (y1 + y2) / 2;
+  return thinArrow(94, y1 + 24, 94, y2 - 26, B.grey, 4) +
+         `<circle cx="94" cy="${ym}" r="15" fill="${B.peak}"/>` + txt(94, ym + 7, n, 20, '#fff', 800, 'middle');
+}
+const NY = [248, 516, 614, 818];
+let ch = `<g data-s="1">${node(NY[0], 'sorted.bam')}${link(NY[0], NY[1], '1')}${node(NY[1], 'filt.bam')}</g>`;
+ch += `<g data-s="2">${link(NY[1], NY[2], '2')}${node(NY[2], 'dedup.bam')}</g>`;
+ch += `<g data-s="3">${link(NY[2], NY[3], '3')}${node(NY[3], 'clean.bam', true)}</g>`;
+document.getElementById('chain').innerHTML = ch;
+
+// ---------- 1804 bit breakdown ----------
+let bt = mtxt(0, 51, '1804', 25, B.ink, 800) + txt(72, 51, '=', 26, B.ink, 800);
+const bits = [['4', '未比对'], ['8', 'mate 未比对'], ['256', '次要比对'], ['512', '质控失败'], ['1024', '已标记重复']];
+const BW = [98, 150, 118, 118, 140];
+let bx = 104;
+bits.forEach(([n, lab], i) => {
+  const w = BW[i];
+  bt += `<rect x="${bx}" y="4" width="${w}" height="76" rx="12" fill="#F4F0E8" stroke="#CFC8BA" stroke-width="2"/>`;
+  bt += mtxt(bx + w / 2, 35, n, 24, B.peak, 800, 'middle') + txt(bx + w / 2, 66, lab, 21, B.ink, 700, 'middle');
+  bx += w;
+  if (i < bits.length - 1) { bt += txt(bx + 13, 50, '+', 24, B.grey, 800, 'middle'); bx += 26; }
+});
+document.getElementById('bits').innerHTML = bt;
+
+// ---------- ② PCR duplicates ----------
+let e2 = txt(22, 34, '去除', 24, B.ink, 800) + txt(78, 34, 'PCR 重复', 24, B.red, 800);
+e2 += `<text x="22" y="64" font-size="22" font-weight="700" fill="${B.ink}" font-family="PingFang SC"><tspan font-family="${MONO}" font-weight="800" fill="${B.peak}">-r</tspan> 删除重复，保留一对</text>`;
+[0, 1, 2].forEach(i => {
+  const y = 18 + i * 20, keep = i === 0, c1 = keep ? B.adA : '#C9C3B8', c2 = keep ? B.adB : '#C9C3B8';
+  e2 += readArrow(330, y, 42, 1, c1) + `<line x1="378" y1="${y}" x2="424" y2="${y}" stroke="${keep ? B.grey : '#D6D0C6'}" stroke-width="2" stroke-dasharray="4 4"/>` + readArrow(470, y, 42, -1, c2);
+});
+e2 += tick(300, 19, 0.4);
+e2 += `<line x1="330" y1="8" x2="330" y2="68" stroke="${B.ink}" stroke-width="1.5" stroke-dasharray="3 4"/><line x1="470" y1="8" x2="470" y2="68" stroke="${B.ink}" stroke-width="1.5" stroke-dasharray="3 4"/>`;
+document.getElementById('ex2').innerHTML = e2;
+
+// ---------- ③ blacklist ----------
+let e3 = txt(22, 40, '去除', 24, B.ink, 800) + txt(78, 40, '黑名单区域', 24, B.red, 800);
+e3 += mtxt(22, 76, '-v', 22, B.peak, 800) + txt(58, 76, '保留不与黑名单重叠的 reads', 22, B.ink, 700);
+const BY = 138;
+e3 += `<rect x="272" y="90" width="70" height="${BY - 90}" rx="6" fill="${B.red}" opacity=".12"/>`;
+e3 += coverage(30, 466, BY, [[130, 14, 12], [307, 40, 8], [400, 18, 12]], B.adB, '#CFE0F6', 1);
+e3 += `<rect x="275" y="93" width="64" height="${BY - 94}" fill="#fff" opacity=".72"/>`;
+e3 += cross(307, 114, 0.5);
+e3 += mtxt(352, 112, 'blacklist', 20, B.red, 800);
+document.getElementById('ex3').innerHTML = e3;
+
+// ---------- ④ read-count bars ----------
+const H = [78, 58, 47, 41], L = ['sorted', 'filt', 'dedup', 'clean'];
+let br = txt(215, 36, '剩余 reads 数', 24, B.ink, 800, 'middle');
+const X0 = 50, BASE = 126;
+H.forEach((h, i) => {
+  const x = X0 + 20 + i * 88;
+  br += `<rect x="${x}" y="${BASE - h}" width="56" height="${h}" rx="4" fill="${i === 3 ? B.green : '#9DBBE3'}"/>`;
+  br += mtxt(x + 28, BASE + 24, L[i], 20, B.grey, 800, 'middle');
+});
+br += `<line x1="${X0}" y1="${BASE}" x2="${X0 + 350}" y2="${BASE}" stroke="${B.ink}" stroke-width="2"/>`;
+document.getElementById('bar').innerHTML = br;
+applyStep();
+</script>
+</body></html>

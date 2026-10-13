@@ -1,0 +1,169 @@
+{
+ "title": "ATAC-seq 数据分析：从 FASTQ 到生物学结论",
+ "subtitle": "示例数据：示例细胞，Control×3 vs Treatment×3，双端测序，hg19。",
+ "voice": "zh-CN-XiaoxiaoNeural",
+ "rate": "+10%",
+ "engine": "edge",
+ "progress_steps": [
+  "比对",
+  "过滤",
+  "质控",
+  "Peak calling",
+  "差异分析",
+  "功能注释"
+ ],
+ "pron": {
+  "ATAC-seq": "ATAC seq",
+  "Tn5": "T N 5",
+  "MACS3": "max 3",
+  "hg19": "H G 19"
+ },
+ "tts_instruction": "<整体情绪：平静，语气：大学老师讲课，语速：适中，英文术语用标准英语发音>",
+ "tts_say": {
+  "比对、过滤、质控、peak calling、差异分析和功能注释": "比对，过滤，质控，peak calling，差异分析和功能注释"
+ },
+ "watch_terms": [
+  "ATAC",
+  "Treatment",
+  "DESeq2"
+ ],
+ "pages": [
+  {
+   "id": "p03",
+   "beats": [
+    {
+     "step": 1,
+     "pose": "point",
+     "text": "先来看ATAC-seq测量的对象：染色质。细胞核里的DNA并不是裸露的，每大约147个碱基的DNA缠绕在一个组蛋白八聚体上，形成核小体；核小体之间，由连接DNA相连。"
+    },
+    {
+     "step": 2,
+     "pose": "sign",
+     "sign": "≈200 bp",
+     "text": "一个核小体加上一段连接DNA，大约是200个碱基，这是染色质的基本重复单位。请记住200这个数字，后面的片段长度质控还会用到它。"
+    },
+    {
+     "step": 3,
+     "pose": "point",
+     "text": "核小体排列紧密的区域是封闭染色质，转录因子很难结合；核小体缺失的区域是开放染色质，也叫可及区域。开放区主要是启动子和增强子这类调控元件，转录因子就结合在这里。"
+    },
+    {
+     "step": 4,
+     "pose": "thumbs",
+     "text": "不同类型的细胞，基因组序列相同，但开放的区域不同。ATAC-seq要做的，就是在全基因组范围内，测出哪些区域是开放的。"
+    }
+   ],
+   "chapter": "第2章 ATAC-seq 是什么",
+   "progress": -2,
+   "title": "染色质、核小体与开放区域"
+  },
+  {
+   "id": "p10",
+   "chapter": "第5章 上游② 过滤与校正",
+   "progress": 1,
+   "title": "BAM 过滤：samtools、sambamba 与 bedtools",
+   "budget_seconds": 60,
+   "beats": [
+    {
+     "step": 1,
+     "pose": "point",
+     "text": "这四类reads用三条命令依次去除。第一条samtools view：小写f设为2，只保留正确配对的reads；大写F设为1804，去掉未比对、次要比对等记录；q设为30，只留高质量比对。再用grep去掉线粒体，重新排序。",
+     "visual": "左侧出现代码块①，等宽字体3行：\nsamtools view -h -f 2 -F 1804 -q 30 Control1.sorted.bam \\\n  | grep -v chrM \\\n  | samtools sort -o Control1.filt.bam\n依次高亮 -f 2、-F 1804、-q 30、grep -v chrM。右侧对应标签「去掉了什么」：非正确配对；未比对、配对read未比对、次要比对、质控失败、已标记重复（1804 = 4+8+256+512+1024）；MAPQ < 30；线粒体reads。"
+    },
+    {
+     "step": 2,
+     "pose": "point",
+     "text": "第二条，sambamba markdup根据片段两端的位置识别PCR重复，r参数表示直接删除。",
+     "visual": "代码块①下方出现代码块②，1行：\nsambamba markdup -r Control1.filt.bam Control1.dedup.bam\n高亮 -r。右侧标签「去掉：PCR重复」，配小示意：起止位置相同的几对reads只保留一对。"
+    },
+    {
+     "step": 3,
+     "pose": "point",
+     "text": "第三条，bedtools intersect加v参数反选，只保留不与黑名单重叠的reads，最后建立索引。",
+     "visual": "出现代码块③，3行：\nbedtools intersect -v -abam Control1.dedup.bam \\\n  -b ref/hg19-blacklist.v2.bed > Control1.clean.bam\nsamtools index Control1.clean.bam\n高亮 -v 和 ref/hg19-blacklist.v2.bed。右侧标签「去掉：黑名单区域」。三块代码左侧用竖线串起文件链：sorted.bam → filt.bam → dedup.bam → clean.bam。"
+    },
+    {
+     "step": 4,
+     "pose": "sign",
+     "sign": "检查点",
+     "text": "每一步之后，都用samtools view加c参数数一下剩多少reads。有效reads数本身就是质控指标，某一步掉得特别多，就要回头查原因。",
+     "visual": "文件链旁出现绿色检查点框，内有一行命令 samtools view -c Control1.clean.bam。旁边一张示意柱状图：sorted、filt、dedup、clean 四根柱依次变矮，不标具体数字，只在柱顶标「剩余reads数」。"
+    }
+   ]
+  },
+  {
+   "id": "p12",
+   "chapter": "第6章 上游③ 质量控制",
+   "progress": 2,
+   "title": "片段长度分布与核小体周期",
+   "budget_seconds": 55,
+   "beats": [
+    {
+     "step": 1,
+     "pose": "point",
+     "text": "过滤完成后进入质量控制。第一项是片段长度分布，片段长度就是一对reads从R1起点到R2终点的总长，也就是SAM格式的第9列。",
+     "visual": "画面左侧：一段水平DNA双螺旋，两处Tn5插入点用红色小三角标出；两点之间是一个测序片段，左端红色R1箭头向右，右端蓝色R2箭头向左，片段下方画双向标尺，标注「片段长度 = TLEN」。画面右侧：一行简化的SAM记录，按列分格，第9列用黄色高亮并标注「第9列 TLEN」，其下一行小字「正负号只表示方向，长度取绝对值」。"
+    },
+    {
+     "step": 2,
+     "pose": "magnifier",
+     "text": "两个插入点落在核小体两侧，片段就包含这个核小体。所以好数据呈现周期性的峰：小于100个碱基的来自无核小体区NFR，约200、400、600个碱基对应单、双、三核小体。",
+     "visual": "画面中部出现重画的片段长度直方图：横轴片段长度0到1000bp，纵轴reads数；曲线在100bp以内最高，随后在约200、400、600bp出现三个依次减弱的周期峰。每个峰上方配一个小示意：两个红色Tn5插入点之间分别包含0、1、2、3个核小体（组蛋白八聚体加缠绕DNA），对应标签「NFR <100bp」「单核小体 ~200bp」「双核小体 ~400bp」「三核小体 ~600bp」。小图标举放大镜对着周期峰。"
+    },
+    {
+     "step": 3,
+     "pose": "point",
+     "text": "红线是Bowtie2默认的500上限，如果比对时没有改，超过500的片段就全部丢失了。",
+     "visual": "在直方图500bp处画一条红色竖直虚线，标签「Bowtie2 默认上限 500bp」；红线右侧区域加半透明灰色遮罩，标注「默认参数下这些片段会丢失」；遮罩上方一个绿色小标签「比对时已设 -X 2000」。"
+    },
+    {
+     "step": 4,
+     "pose": "sign",
+     "sign": "质量不佳",
+     "text": "质量不佳的数据呈平滑下降、没有周期，常见原因是细胞活力差、细胞核提取不充分，或Tn5与细胞数的比例不当。用ATACseqQC的fragSizeDist，可以方便地画出这张图。",
+     "visual": "画面右上方插入一张缩小的对照图：曲线从左到右平滑单调下降、没有周期峰，红色角标「不合格」；其下三个文字标签，各配一个教科书式小示意：膜破损的细胞「细胞活力差」、边缘不完整的细胞核「细胞核提取不好」、一条Tn5与细胞数的比例条「Tn5 : 细胞数 比例不当」。画面左下方、字幕区以上出现等宽代码块，fragSizeDist高亮：\nlibrary(ATACseqQC)\nfragSizeDist(\"Control1.clean.bam\", \"Control1\") 另在右侧加一个小卡片「模拟数据」，放由模拟数据生成的片段长度分布图 ../assets/figs/fragment_size_simulated.png，并用两个小箭头标注：Control曲线平滑、周期弱；Treatment短片段峰更尖。"
+    }
+   ]
+  },
+  {
+   "id": "p28",
+   "chapter": "第10章 延伸与总结",
+   "progress": -1,
+   "title": "Take-home messages",
+   "budget_seconds": 50,
+   "beats": [
+    {
+     "step": 1,
+     "pose": "point",
+     "text": "最后，带走几条关键信息。第一，ATAC-seq测的是染色质可及性：Tn5只能进入开放DNA，reads堆积的地方就是peak。",
+     "visual": "第1条：ATAC-seq 测的是染色质可及性"
+    },
+    {
+     "step": 2,
+     "pose": "point",
+     "text": "第二，上游包括比对、过滤、位置校正和peak calling；质控重点看片段长度周期、TSS富集和FRiP，并在样本之间横向比较。",
+     "visual": "第2条：上游与质控"
+    },
+    {
+     "step": 3,
+     "pose": "point",
+     "text": "第三，下游从count矩阵出发，依次做差异分析、peak注释、motif富集和footprint。",
+     "visual": "第3条：下游"
+    },
+    {
+     "step": 4,
+     "pose": "sign",
+     "sign": "谨慎解读",
+     "text": "第四，解读要谨慎：差异结果严重偏向一个方向时，先查标准化和文库质量；最近的基因不一定是靶基因，motif也只是候选。",
+     "visual": "第4条：解读要谨慎"
+    },
+    {
+     "step": 5,
+     "pose": "cheer",
+     "text": "最后记住：参考文件版本要统一，搞懂每个参数，再改成适合自己数据的代码。这节课就到这里。",
+     "visual": "第5条：版本统一、搞懂参数"
+    }
+   ]
+  }
+ ]
+}
