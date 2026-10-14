@@ -112,11 +112,27 @@ Their v2/v3 labels are file-layout conventions, not mandatory course versions. P
 
 - `cache/clips_v2/index.json`: maps punctuation-normalized text to `text`, `wav` and `speech: [start,end]`
   relative to a reusable approved clip.
-- `cache/clips_v2/new_lines.json`: new recording order, as objects containing `sentences` lists.
+- `cache/clips_v2/new_lines.json`: new recording order for the first revision round, as objects containing
+  `sentences` lists.
 - `cache/clips_v3/check.json`: new clips and their two-model check results, produced by `cut_new_takes.py`.
 
-`cut_new_takes.py [take-directory]` cuts and checks a whole batch. Its default directory is
-`配音/豆包_补录v3/`. Do not run a batch recut over accepted manual cuts.
-`retake_one.py N [take.wav]` updates just one sentence, trimming at speech edges; each take must contain only
-that sentence. `assemble_v3.py` combines reused and new sentences, matches loudness and writes per-page audio
-and spans directly. Do not deliver an assembly made with `--allow-bad`; resolve every missing or unaccepted clip.
+Later revision rounds use `--round vN` on `cut_new_takes.py` and `retake_one.py`. Each round keeps its plan
+(`cache/clips_vN/new_lines.json`), clips and `check.json` in `cache/clips_vN/`, and its takes default to
+`配音/豆包_补录vN/`, so a new round never overwrites an earlier round's accepted or hand-made cuts. Round v3 keeps
+the original layout (plan in `cache/clips_v2/new_lines.json`).
+
+`cut_new_takes.py [take-directory] [--round vN]` cuts and checks a whole batch. Do not run a batch recut over a
+round with accepted manual cuts.
+`retake_one.py N [take.wav] [--round vN]` updates just one sentence, trimming at speech edges; each take must
+contain only that sentence. `assemble_v3.py` merges every `cache/clips_v*/check.json` in round order, so a later
+round wins for the same sentence, and an accepted re-take also replaces a reused `cache/clips_v2` clip of that
+sentence. It matches loudness and writes per-page audio and spans directly. Do not deliver an assembly made with
+`--allow-bad`; resolve every missing or unaccepted clip.
+
+Approved reused clips can still be wrong. In one revision, two sentences that had been reused for several
+versions turned out to be faulty when each sentence was transcribed whole from the final MP4 with both models:
+one dropped a word, the other repeated a word and dropped a syllable of an English term. Short subtitle-cue checks
+had missed both. After any re-assembly, transcribe every sentence on new or restored pages, plus each low cue
+expanded to its full sentence, from the encoded MP4. To spot a syllable missing inside an English term, compare the
+term's spoken length with another occurrence of the same term. Some web TTS output (豆包 included) contains exact
+digital silence at commas, so runs of zero samples inside a take are normal pauses, not splice marks.

@@ -1,7 +1,9 @@
 """Assemble per-page narration for the current script.json from sentence clips:
-reused sentences from cache/clips_v2 (cut from the approved 豆包 audio), new ones from cache/clips_v3
-(cut_new_takes.py). Writes cache/external/<pid>.wav and cache/external/align.json directly (exact sentence
-spans, no ASR alignment needed). New clips are loudness-matched to the reused ones.
+reused sentences from cache/clips_v2 (cut from the approved 豆包 audio), new ones from the 补录 rounds
+cache/clips_v3, clips_v4, … (cut_new_takes.py --round vN; a later round wins for the same sentence).
+An approved re-take in a round also replaces a reused cache/clips_v2 clip of the same sentence.
+Writes cache/external/<pid>.wav and cache/external/align.json directly (exact sentence spans, no ASR
+alignment needed). New clips are loudness-matched to the reused ones.
 usage: python3 assemble_v3.py [--allow-bad]"""
 import hashlib, json, re, statistics, sys, wave
 from pathlib import Path
@@ -16,7 +18,9 @@ SR = build.SR
 GAP = 0.3                      # base silence between sentences; script.json "pace" widens it at build time
 key = lambda t: re.sub(r'[\s，。、；：！？,.;:!?“”"（）()]', '', t)
 old = json.loads((ROOT / "cache/clips_v2/index.json").read_text())
-chk = {r["text"]: r for r in json.loads((ROOT / "cache/clips_v3/check.json").read_text())}
+chk = {}
+for cj in sorted((ROOT / "cache").glob("clips_v*/check.json"), key=lambda p: int(p.parent.name[7:])):
+    chk.update({r["text"]: r for r in json.loads(cj.read_text())})
 read = lambda f: build.read_wav(f)
 ref_lufs = statistics.median(ps.lufs(read(v["wav"])) for v in list(old.values())[:60])
 out = ROOT / "cache" / "external"; out.mkdir(parents=True, exist_ok=True)
@@ -24,7 +28,7 @@ align, missing = {}, []
 for page in build.load_script()["pages"]:
     pcs, spans, t = [], [], 0.0
     for s in [s for b in page["beats"] for s in build.sentences(b["text"])]:
-        if key(s) in old:
+        if key(s) in old and not (s in chk and chk[s].get("ok") and "wav" in chk[s]):
             o = old[key(s)]; clip = read(o["wav"]); a0, a1 = o["speech"]
         else:
             r = chk.get(s)

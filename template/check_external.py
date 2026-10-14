@@ -145,7 +145,7 @@ def main():
     # which script pages does each part cover
     for k, s in enumerate(stats):
         ps = [r for r in rows if r["parts"] and r["parts"][0] == k]
-        s["pages"] = sorted({r["pid"] for r in ps}, key=lambda x: int(x[1:]))
+        s["pages"] = sorted({r["pid"] for r in ps}, key=lambda x: (int(re.match(r"p(\d+)", x).group(1)), x))
         s["script_chars"] = sum(len(norm_chars(r["text"])) for r in ps)
         s["cps"] = round(s["script_chars"] / max(0.1, s["speech_time"]), 2)
     json.dump({"stats": stats, "rows": rows, "extra": extra, "watch": atac}, open(CACHE / f"check.{tag}.json", "w"), ensure_ascii=False, indent=1)

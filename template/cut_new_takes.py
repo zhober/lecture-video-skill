@@ -1,18 +1,25 @@
-"""Cut the 补录 takes (配音/豆包_补录v3/*.wav, natural order) into the new sentences listed in
-cache/clips_v2/new_lines.json and check each clip with two ASR models.
-usage: python3 cut_new_takes.py [take_dir]      -> cache/clips_v3/<md5>.wav + cache/clips_v3/check.json"""
+"""Cut the 补录 takes (配音/豆包_补录<round>/*.wav, natural order) into the new sentences of that round and check
+each clip with two ASR models.
+usage: python3 cut_new_takes.py [take_dir] [--round vN]   (default round v3)
+  round v3: plan cache/clips_v2/new_lines.json (the first round kept its plan there)
+  round vN: plan cache/clips_vN/new_lines.json
+  -> cache/clips_<round>/<md5>.wav + cache/clips_<round>/check.json
+Each round has its own folder, so cutting a new round never touches an earlier round's (possibly hand-made) cuts."""
 import difflib, hashlib, json, re, sys, wave
 from pathlib import Path
 import numpy as np
 ROOT = Path(__file__).resolve().parent
 sys.argv, argv = [sys.argv[0]], sys.argv[1:]
+RND = "v3"
+if "--round" in argv:
+    i = argv.index("--round"); RND = argv[i + 1]; del argv[i:i + 2]
 import patch_sentences as ps
 from faster_whisper import WhisperModel
 import zhconv
 
-TAKES = Path(argv[0]) if argv else ROOT.parent / "配音" / "豆包_补录v3"
-OUT = ROOT / "cache" / "clips_v3"; OUT.mkdir(parents=True, exist_ok=True)
-plan = json.loads((ROOT / "cache" / "clips_v2" / "new_lines.json").read_text())
+TAKES = Path(argv[0]) if argv else ROOT.parent / "配音" / f"豆包_补录{RND}"
+OUT = ROOT / "cache" / f"clips_{RND}"; OUT.mkdir(parents=True, exist_ok=True)
+plan = json.loads((ROOT / "cache" / ("clips_v2" if RND == "v3" else f"clips_{RND}") / "new_lines.json").read_text())
 sents = [s for pl in plan for s in pl["sentences"]]
 files = sorted([f for f in TAKES.iterdir() if f.suffix.lower() == ".wav" and not re.match(r"第\d+句", f.stem)], key=ps.nat)
 pcm = np.concatenate([np.concatenate([ps.to_wav(f, OUT / f"take{i}.wav"), np.zeros(int(0.5 * ps.SR), np.int16)]) for i, f in enumerate(files)])
